@@ -32,6 +32,3 @@ class SignupRequest extends FormRequest
         ];
     }
 }
-
-
-        $token = $user->createToken('auth_token')->plainTextToken;

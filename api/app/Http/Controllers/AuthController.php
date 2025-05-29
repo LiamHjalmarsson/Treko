@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoginRequest;
 use App\Http\Requests\SignupRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -24,17 +27,40 @@ class AuthController extends Controller
             'role' => 'member',
         ]);
 
+         $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
             'user' => new UserResource($user),
-            'token' => "token",
+            'token' => $token,
         ], 201);
     }
 
-    public function login(Request $request) {
-        return response()->json(["s" => "ss"]);
+    public function login(LoginRequest $request): JsonResponse {
+       $validated = $request->validated();
+
+        if (!Auth::attempt($validated)) {
+            return response()->json(['error' => 'Invalid credentials'], 401);
+        }
+
+        $user = Auth::user();
+
+        $user->update(['last_login_at' => now()]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => new UserResource($user),
+            'token' => $token,
+        ], 200);
     }
 
-    public function logout(Request $requests) {
-        return response()->json(["s" => "ss"]);
+    public function logout(Request $request): JsonResponse {
+        $token = $request->bearerToken();
+
+        $accessToken = PersonalAccessToken::findToken($token);
+
+        $accessToken->delete();
+
+        return response()->json(["message", "Logged out"], 200);
     }
 }
