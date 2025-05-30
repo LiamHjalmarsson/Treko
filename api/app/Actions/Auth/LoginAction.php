@@ -16,13 +16,14 @@ class LoginAction {
         }
 
         $user = Auth::user();
+        
         $user->update(['last_login_at' => now()]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
+        return [
             'user' => new UserResource($user),
             'token' => $token,
-        ]);
+        ];
     }   
 }
